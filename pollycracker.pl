@@ -18,6 +18,7 @@ die "No hash specified\n" unless $hash && $hash =~ /^[a-f0-9]{32}$/i;
 
 my $result = $ua->get("http://www.google.com/search?q=$hash");
 # now we have the result page, probably with the clear text password
+die "Unable to retrieve search results\n" unless $result->is_success();
 
 for my $word (split(/[^[:graph:]]|<[^>]+>/, $result->content())) {
 	if ($hash eq md5_hex($word)) {
