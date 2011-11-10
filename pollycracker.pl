@@ -8,18 +8,18 @@
 use strict;
 use warnings;
 
-use WWW::Mechanize;
+use LWP::UserAgent;
 use Digest::MD5 qw/md5_hex/;
 
-my $bot = new WWW::Mechanize;
+my $ua = new LWP::UserAgent(agent=> "Pollycracker");
 
 my $hash = $ARGV[0];
 die "No hash specified\n" unless $hash && $hash =~ /^[a-f0-9]{32}$/i;
 
-$bot->get("http://www.google.com/search?q=$hash");
+my $result = $ua->get("http://www.google.com/search?q=$hash");
 # now we have the result page, probably with the clear text password
 
-for my $word (split(/[^[:graph:]]|<[^>]+>/, $bot->content( ))) {
+for my $word (split(/[^[:graph:]]|<[^>]+>/, $result->content())) {
 	if ($hash eq md5_hex($word)) {
 		print $word, "\n";
 		last;
