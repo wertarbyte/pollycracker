@@ -13,16 +13,24 @@ use Digest::MD5 qw/md5_hex/;
 
 my $ua = new LWP::UserAgent(agent=> "Pollycracker");
 
-my $hash = $ARGV[0];
-die "No hash specified\n" unless $hash && $hash =~ /^[a-f0-9]{32}$/i;
+my %hashes = map {$_=>1} grep {/^[a-f0-9]{32}$/i} @ARGV;
 
-my $result = $ua->get("http://www.google.com/search?q=$hash");
-# now we have the result page, probably with the clear text password
-die "Unable to retrieve search results\n" unless $result->is_success();
+die "No valid hash specified\n" unless %hashes;
 
-for my $word (split(/[^[:graph:]]|<[^>]+>/, $result->content())) {
-	if ($hash eq md5_hex($word)) {
-		print $word, "\n";
-		last;
+my %seen = ();
+my %table =
+	# calculate the hash for each word on the pages
+	map { md5_hex($_), $_ }
+	# remove duplicate words
+	grep {!$seen{$_}++}
+	# get the result page for each requested hash and split it into words
+	map {
+		split(/[^[:graph:]]|<[^>]+>/,
+		$ua->get("http://www.google.com/search?q=$_")->content())
+	} keys %hashes;
+
+foreach (keys %hashes) {
+	if (exists $table{$_}) {
+		print "$_\t$table{$_}\n";
 	}
 }
