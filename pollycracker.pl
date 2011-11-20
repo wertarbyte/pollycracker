@@ -10,17 +10,23 @@ use warnings;
 
 use LWP::UserAgent;
 use Digest::MD5 qw/md5_hex/;
+use Digest::SHA qw/sha1_hex sha256_hex sha512_hex/;
 
 my $ua = new LWP::UserAgent(agent=> "Pollycracker");
 
-my %hashes = map {$_=>1} grep {/^[a-f0-9]{32}$/i} @ARGV;
+my %hashes = map {$_=>1} grep {/^[a-f0-9]+$/i} @ARGV;
 
 die "No valid hash specified\n" unless %hashes;
 
 my %seen = ();
 my %table =
-	# calculate the hash for each word on the pages
-	map { md5_hex($_), $_ }
+	# calculate the hashes for each word on the pages
+	map {
+		sha1_hex($_) => $_,
+		sha256_hex($_) => $_,
+		sha512_hex($_) => $_,
+		md5_hex($_) => $_,
+	}
 	# remove duplicate words
 	grep {!$seen{$_}++}
 	# get the result page for each requested hash and split it into words
